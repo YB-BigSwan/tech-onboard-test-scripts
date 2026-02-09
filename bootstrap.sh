@@ -219,7 +219,81 @@ set timeout -1
 spawn bash ${bootstrapPath}
 expect {
   -re "Password:|password:" {
-    send "${password}\\r"
+    send "${password.replace(/\$/g, '\\
+    
+    // Execute bootstrap script
+    mainWindow.webContents.send('log-output', `\nExecuting bootstrap.sh...\n`);
+    mainWindow.webContents.send('log-output', `${'='.repeat(50)}\n`);
+    
+    return new Promise((resolve, reject) => {
+      const bootstrap = spawn('expect', [expectScriptPath], {
+        cwd: tempDir,
+        env: {
+          ...process.env,
+          USER: process.env.USER || process.env.LOGNAME
+        }
+      });
+      
+      // Stream stdout
+      bootstrap.stdout.on('data', (data) => {
+        mainWindow.webContents.send('log-output', data.toString());
+      });
+      
+      // Stream stderr
+      bootstrap.stderr.on('data', (data) => {
+        mainWindow.webContents.send('log-output', data.toString());
+      });
+      
+      // Handle completion
+      bootstrap.on('close', (code) => {
+        mainWindow.webContents.send('log-output', `\n${'='.repeat(50)}`);
+        
+        // Clean up expect script
+        try {
+          fs.unlinkSync(expectScriptPath);
+        } catch (e) {
+          // Ignore
+        }
+        
+        if (code === 0) {
+          mainWindow.webContents.send('log-output', `\n✓ Bootstrap completed successfully!\n`);
+          resolve({ success: true, message: 'Bootstrap completed successfully' });
+        } else {
+          mainWindow.webContents.send('log-output', `\n✗ Bootstrap failed with exit code ${code}\n`);
+          reject(new Error(`Bootstrap script exited with code ${code}`));
+        }
+        
+        // Cleanup temp directory
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+          mainWindow.webContents.send('log-output', `Cleaned up temporary files\n`);
+        } catch (err) {
+          mainWindow.webContents.send('log-output', `Warning: Could not clean up ${tempDir}\n`);
+        }
+      });
+      
+      // Handle errors
+      bootstrap.on('error', (error) => {
+        mainWindow.webContents.send('log-output', `ERROR: ${error.message}\n`);
+        reject(error);
+      });
+    });
+    
+  } catch (error) {
+    mainWindow.webContents.send('log-output', `\nERROR: ${error.message}\n`);
+    
+    // Cleanup on error
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    } catch (cleanupError) {
+      // Ignore cleanup errors
+    }
+    
+    throw error;
+  }
+});).replace(/"/g, '\\"')}\\r"
     exp_continue
   }
   "Press RETURN" {
