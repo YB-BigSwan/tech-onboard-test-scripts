@@ -197,10 +197,7 @@ if [[ $(uname -m) == 'arm64' ]]; then
     fi
 fi
 
-# Install SnowSQL CLI & GUI
-echo "Installing SnowSQL CLI..."
-brew install --cask snowflake-snowsql
-
+# Install SnowSQL
 echo "[INFO] Installing SnowSQL..."
 if [[ ! -f /Applications/SnowSQL.app/Contents/MacOS/snowsql ]]; then
     echo "[INFO] Downloading SnowSQL installer..."
