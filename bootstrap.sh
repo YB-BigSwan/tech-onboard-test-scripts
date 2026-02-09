@@ -174,9 +174,12 @@ fi
 # Verify code is now available
 if command -v code &> /dev/null; then
     while IFS= read -r extension; do
-        echo "Installing extension: $extension"
-        code --install-extension "$extension" --force
-    done < vscode-extensions.txt
+    # Skip empty lines and comments
+    [[ -z "$extension" || "$extension" =~ ^#.*$ ]] && continue
+    
+    echo "Installing extension: $extension"
+    code --install-extension "$extension" --force
+done < vscode-extensions.txt
 else
     echo "ERROR: VS Code CLI not found. Please ensure VS Code is installed."
     echo "You may need to open VS Code and run 'Shell Command: Install code command in PATH'"
@@ -194,7 +197,10 @@ if [[ $(uname -m) == 'arm64' ]]; then
     fi
 fi
 
-# Install SnowSQL manually (not available via Homebrew)
+# Install SnowSQL CLI & GUI
+echo "Installing SnowSQL CLI..."
+brew install --cask snowflake-snowsql
+
 echo "[INFO] Installing SnowSQL..."
 if [[ ! -f /Applications/SnowSQL.app/Contents/MacOS/snowsql ]]; then
     echo "[INFO] Downloading SnowSQL installer..."
