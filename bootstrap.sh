@@ -46,7 +46,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "[STEP] Step 1/7: Checking Homebrew installation..."
 if ! command -v brew &> /dev/null; then
     echo "[INFO] Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Add Homebrew to PATH for Apple Silicon Macs
     if [[ $(uname -m) == 'arm64' ]]; then
@@ -165,6 +165,13 @@ echo ""
 
 # Step 7: Install VS Code extensions
 echo "[STEP] Step 7/7: Installing VS Code extensions..."
+
+# Add VS Code to PATH if not already there
+if ! command -v code &> /dev/null; then
+    echo "[INFO] Adding VS Code 'code' command to PATH..."
+    export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+fi
+
 if command -v code &> /dev/null && [[ -f "$SCRIPT_DIR/vscode_extensions.txt" ]]; then
     while IFS= read -r extension || [[ -n "$extension" ]]; do
         [[ -z "$extension" || "$extension" =~ ^#.* ]] && continue
@@ -172,9 +179,15 @@ if command -v code &> /dev/null && [[ -f "$SCRIPT_DIR/vscode_extensions.txt" ]];
         echo "[INFO] Installing VS Code extension: $extension"
         code --install-extension "$extension" --force 2>&1 || echo "[WARN] Failed to install $extension, continuing..."
     done < "$SCRIPT_DIR/vscode_extensions.txt"
+    echo "[INFO] VS Code extensions installation complete"
 else
     if ! command -v code &> /dev/null; then
-        echo "[WARN] VS Code 'code' command not found. After installing VS Code, run 'Shell Command: Install code command in PATH' from VS Code Command Palette"
+        echo "[WARN] VS Code 'code' command not found"
+        echo "[WARN] To install extensions manually:"
+        echo "[WARN] 1. Open VS Code"
+        echo "[WARN] 2. Press Cmd+Shift+P"
+        echo "[WARN] 3. Type 'shell command' and select 'Install code command in PATH'"
+        echo "[WARN] 4. Rerun this script to install extensions"
     fi
 fi
 echo ""
