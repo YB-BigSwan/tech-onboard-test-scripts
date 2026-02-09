@@ -164,20 +164,35 @@ fi
 echo ""
 
 # Step 7: Install VS Code extensions
-echo "[STEP] Step 7/7: Installing VS Code extensions..."
-if command -v code &> /dev/null && [[ -f "$SCRIPT_DIR/vscode_extensions.txt" ]]; then
-    while IFS= read -r extension || [[ -n "$extension" ]]; do
-        [[ -z "$extension" || "$extension" =~ ^#.* ]] && continue
-        
-        echo "[INFO] Installing VS Code extension: $extension"
-        code --install-extension "$extension" --force 2>&1 || echo "[WARN] Failed to install $extension, continuing..."
-    done < "$SCRIPT_DIR/vscode_extensions.txt"
+echo "Step 7: Installing VS Code extensions..."
+
+# Add VS Code to PATH if it's not already there
+if ! command -v code &> /dev/null; then
+    export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+fi
+
+# Verify code is now available
+if command -v code &> /dev/null; then
+    while IFS= read -r extension; do
+        echo "Installing extension: $extension"
+        code --install-extension "$extension" --force
+    done < vscode-extensions.txt
 else
-    if ! command -v code &> /dev/null; then
-        echo "[WARN] VS Code 'code' command not found. After installing VS Code, run 'Shell Command: Install code command in PATH' from VS Code Command Palette"
-    fi
+    echo "ERROR: VS Code CLI not found. Please ensure VS Code is installed."
+    echo "You may need to open VS Code and run 'Shell Command: Install code command in PATH'"
 fi
 echo ""
+
+# Check and install Rosetta 2 if on Apple Silicon
+if [[ $(uname -m) == 'arm64' ]]; then
+    echo "Checking for Rosetta 2..."
+    if ! /usr/bin/pgrep -q oahd; then
+        echo "Installing Rosetta 2 (required for SnowSQL on Apple Silicon)..."
+        softwareupdate --install-rosetta --agree-to-license
+    else
+        echo "Rosetta 2 already installed."
+    fi
+fi
 
 # Install SnowSQL manually (not available via Homebrew)
 echo "[INFO] Installing SnowSQL..."
