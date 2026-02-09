@@ -35,18 +35,18 @@ if [[ "$(uname)" != "Darwin" ]]; then
     exit 1
 fi
 
-log_info "Starting MacOS Developer Environment Setup..."
-log_info "This will take 15-30 minutes depending on your internet connection"
+echo "Starting MacOS Developer Environment Setup..."
+echo "This will take 15-30 minutes depending on your internet connection"
 echo ""
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Step 1: Install Homebrew if not already installed
-log_step "Step 1/7: Checking Homebrew installation..."
+echo "[STEP] Step 1/7: Checking Homebrew installation..."
 if ! command -v brew &> /dev/null; then
-    log_info "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    echo "[INFO] Installing Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Add Homebrew to PATH for Apple Silicon Macs
     if [[ $(uname -m) == 'arm64' ]]; then
@@ -54,92 +54,92 @@ if ! command -v brew &> /dev/null; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 else
-    log_info "Homebrew already installed"
+    echo "[INFO] Homebrew already installed"
     brew update
 fi
 echo ""
 
 # Step 2: Install CLI packages
-log_step "Step 2/7: Installing CLI packages..."
+echo "[STEP] Step 2/7: Installing CLI packages..."
 
 # Core utilities
-log_info "Installing core utilities..."
-brew install coreutils binutils diffutils gnutls jq bazelisk
+echo "[INFO] Installing core utilities..."
+brew install coreutils binutils diffutils gnutls jq bazelisk 2>&1
 
 # Development tools
-log_info "Installing development tools..."
-brew install gcc parallel make gnu-sed graphviz python-yq
+echo "[INFO] Installing development tools..."
+brew install gcc parallel make gnu-sed graphviz python-yq 2>&1
 
 # Programming languages and tools
-log_info "Installing programming languages and cloud tools..."
-brew install git go docker docker-compose kubectl openblas node helm terraform hcl2json gh
+echo "[INFO] Installing programming languages and cloud tools..."
+brew install git go docker docker-compose kubectl openblas node helm terraform hcl2json gh 2>&1
 
 # Python
-log_info "Installing Python..."
-brew install python@3.11
+echo "[INFO] Installing Python..."
+brew install python@3.11 2>&1
 
-log_info "CLI packages installation complete"
+echo "[INFO] CLI packages installation complete"
 echo ""
 
 # Step 3: Install GUI applications
-log_step "Step 3/7: Installing GUI applications..."
+echo "[STEP] Step 3/7: Installing GUI applications..."
 
-log_info "Installing Visual Studio Code..."
-brew install --cask visual-studio-code
+echo "[INFO] Installing Visual Studio Code..."
+brew install --cask visual-studio-code 2>&1
 
-log_info "Installing iTerm2..."
-brew install --cask iterm2
+echo "[INFO] Installing iTerm2..."
+brew install --cask iterm2 2>&1
 
-log_info "Installing Docker Desktop..."
-brew install --cask docker
+echo "[INFO] Installing Docker Desktop..."
+brew install --cask docker 2>&1
 
-log_info "Installing Tailscale..."
-brew install --cask tailscale
+echo "[INFO] Installing Tailscale..."
+brew install --cask tailscale 2>&1
 
-log_info "Installing Google Cloud SDK..."
-brew install --cask google-cloud-sdk
+echo "[INFO] Installing Google Cloud SDK..."
+brew install --cask google-cloud-sdk 2>&1
 
-log_info "GUI applications installation complete"
+echo "[INFO] GUI applications installation complete"
 echo ""
 
 # Step 4: Install gcloud components
-log_step "Step 4/7: Installing gcloud components..."
+echo "[STEP] Step 4/7: Installing gcloud components..."
 if command -v gcloud &> /dev/null; then
-    log_info "Installing gke-gcloud-auth-plugin..."
-    gcloud components install gke-gcloud-auth-plugin --quiet || log_warn "Failed to install gke-gcloud-auth-plugin"
+    echo "[INFO] Installing gke-gcloud-auth-plugin..."
+    gcloud components install gke-gcloud-auth-plugin --quiet 2>&1 || echo "[WARN] Failed to install gke-gcloud-auth-plugin"
 fi
 echo ""
 
 # Step 5: Install Oh My Zsh
-log_step "Step 5/7: Setting up Oh My Zsh..."
+echo "[STEP] Step 5/7: Setting up Oh My Zsh..."
 if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-    log_info "Installing Oh My Zsh..."
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    echo "[INFO] Installing Oh My Zsh..."
+    RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" 2>&1
 else
-    log_info "Oh My Zsh already installed"
+    echo "[INFO] Oh My Zsh already installed"
 fi
 
 # Install zsh plugins
-log_info "Installing zsh plugins..."
+echo "[INFO] Installing zsh plugins..."
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
 # zsh-syntax-highlighting
 if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]]; then
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" 2>&1
 else
-    log_info "zsh-syntax-highlighting already installed"
+    echo "[INFO] zsh-syntax-highlighting already installed"
 fi
 
 # zsh-autosuggestions
 if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]]; then
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions" 2>&1
 else
-    log_info "zsh-autosuggestions already installed"
+    echo "[INFO] zsh-autosuggestions already installed"
 fi
 echo ""
 
 # Step 6: Setup dotfiles (symlinks)
-log_step "Step 6/7: Setting up dotfiles..."
+echo "[STEP] Step 6/7: Setting up dotfiles..."
 if [[ -d "$SCRIPT_DIR/dotfiles" ]]; then
     for file in "$SCRIPT_DIR/dotfiles"/.??*; do
         [[ "$(basename "$file")" == ".git" ]] && continue
@@ -150,64 +150,64 @@ if [[ -d "$SCRIPT_DIR/dotfiles" ]]; then
         
         # Backup existing file if it exists and is not a symlink
         if [[ -f "$target" && ! -L "$target" ]]; then
-            log_warn "Backing up existing $filename to ${filename}.backup"
+            echo "[WARN] Backing up existing $filename to ${filename}.backup"
             mv "$target" "${target}.backup"
         fi
         
         # Create symlink
-        log_info "Symlinking $filename"
+        echo "[INFO] Symlinking $filename"
         ln -sf "$file" "$target"
     done
 else
-    log_warn "dotfiles directory not found, skipping..."
+    echo "[WARN] dotfiles directory not found, skipping..."
 fi
 echo ""
 
 # Step 7: Install VS Code extensions
-log_step "Step 7/7: Installing VS Code extensions..."
+echo "[STEP] Step 7/7: Installing VS Code extensions..."
 if command -v code &> /dev/null && [[ -f "$SCRIPT_DIR/vscode_extensions.txt" ]]; then
     while IFS= read -r extension || [[ -n "$extension" ]]; do
         [[ -z "$extension" || "$extension" =~ ^#.* ]] && continue
         
-        log_info "Installing VS Code extension: $extension"
-        code --install-extension "$extension" --force || log_warn "Failed to install $extension, continuing..."
+        echo "[INFO] Installing VS Code extension: $extension"
+        code --install-extension "$extension" --force 2>&1 || echo "[WARN] Failed to install $extension, continuing..."
     done < "$SCRIPT_DIR/vscode_extensions.txt"
 else
     if ! command -v code &> /dev/null; then
-        log_warn "VS Code 'code' command not found. After installing VS Code, run 'Shell Command: Install code command in PATH' from VS Code Command Palette"
+        echo "[WARN] VS Code 'code' command not found. After installing VS Code, run 'Shell Command: Install code command in PATH' from VS Code Command Palette"
     fi
 fi
 echo ""
 
 # Install SnowSQL manually (not available via Homebrew)
-log_info "Installing SnowSQL..."
+echo "[INFO] Installing SnowSQL..."
 if [[ ! -f /Applications/SnowSQL.app/Contents/MacOS/snowsql ]]; then
-    log_info "Downloading SnowSQL installer..."
-    curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/darwin_x86_64/snowsql-1.2.28-darwin_x86_64.pkg
-    log_info "Installing SnowSQL (may require password)..."
-    sudo installer -pkg snowsql-1.2.28-darwin_x86_64.pkg -target /
+    echo "[INFO] Downloading SnowSQL installer..."
+    curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/darwin_x86_64/snowsql-1.2.28-darwin_x86_64.pkg 2>&1
+    echo "[INFO] Installing SnowSQL (may require password)..."
+    sudo installer -pkg snowsql-1.2.28-darwin_x86_64.pkg -target / 2>&1
     rm snowsql-1.2.28-darwin_x86_64.pkg
 else
-    log_info "SnowSQL already installed"
+    echo "[INFO] SnowSQL already installed"
 fi
 echo ""
 
-log_info "=========================================="
-log_info "Setup Complete! 🎉"
-log_info "=========================================="
+echo "=========================================="
+echo "Setup Complete! 🎉"
+echo "=========================================="
 echo ""
-log_info "Next steps:"
-log_info "1. Restart your terminal or run: source ~/.zshrc"
-log_info "2. Configure your Git credentials if not already set:"
-log_info "   git config --global user.name 'Your Name'"
-log_info "   git config --global user.email 'your.email@example.com'"
-log_info "3. Sign in to services:"
-log_info "   - Docker Desktop (open the app)"
-log_info "   - gcloud: gcloud auth login"
-log_info "   - GitHub: gh auth login"
-log_info "   - Tailscale: sudo tailscale up"
-log_info "4. Add your SSH keys to ~/.ssh/ (not included in this repo for security)"
-log_info "5. Configure SnowSQL: snowsql -a <account> -u <username>"
+echo "Next steps:"
+echo "1. Restart your terminal or run: source ~/.zshrc"
+echo "2. Configure your Git credentials if not already set:"
+echo "   git config --global user.name 'Your Name'"
+echo "   git config --global user.email 'your.email@example.com'"
+echo "3. Sign in to services:"
+echo "   - Docker Desktop (open the app)"
+echo "   - gcloud: gcloud auth login"
+echo "   - GitHub: gh auth login"
+echo "   - Tailscale: sudo tailscale up"
+echo "4. Add your SSH keys to ~/.ssh/ (not included in this repo for security)"
+echo "5. Configure SnowSQL: snowsql -a <account> -u <username>"
 echo ""
-log_info "Note: Some applications may require a restart to work properly"
+echo "Note: Some applications may require a restart to work properly"
 echo ""
