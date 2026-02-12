@@ -59,20 +59,28 @@ else
 fi
 echo ""
 
-# Step 2: Install brew packages from brewfile.txt
+# Step 2: Install brew packages from brew-packages.txt
 log_step "Step 2/7: Installing brew packages..."
 
-BREW_FILE="$SCRIPT_DIR/brewfile.txt"
+BREW_FILE="$SCRIPT_DIR/brew-packages.txt"
 if [[ -f "$BREW_FILE" ]]; then
+    local cask_step_logged=false
     while IFS= read -r package <&3; do
         # Skip empty lines and comments
         [[ -z "$package" || "$package" =~ ^#.*$ ]] && continue
+
+        # Emit GUI step marker on first cask so the Electron app can track progress
+        if [[ "$package" == --cask* && "$cask_step_logged" == false ]]; then
+            echo ""
+            log_step "Step 3/7: Installing GUI applications..."
+            cask_step_logged=true
+        fi
 
         log_info "Installing: $package"
         brew install $package || log_warn "Failed to install: $package"
     done 3< "$BREW_FILE"
 else
-    log_error "brewfile.txt not found at $BREW_FILE"
+    log_error "brew-packages.txt not found at $BREW_FILE"
     exit 1
 fi
 
