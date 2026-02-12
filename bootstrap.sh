@@ -59,26 +59,22 @@ else
 fi
 echo ""
 
-# Step 2: Install brew packages from brewfile.txt
+# Step 2: Install brew packages from brew-packages.txt
 log_step "Step 2/7: Installing brew packages..."
 
-BREW_FILE="$SCRIPT_DIR/brewfile.txt"
+BREW_FILE="$SCRIPT_DIR/brew-packages.txt"
 if [[ -f "$BREW_FILE" ]]; then
-    while IFS= read -r package; do
+    while IFS= read -r package <&3; do
         # Skip empty lines and comments
         [[ -z "$package" || "$package" =~ ^#.*$ ]] && continue
 
         log_info "Installing: $package"
-        brew install $package 2>&1 || log_warn "Failed to install: $package"
-    done < "$BREW_FILE"
+        brew install $package || log_warn "Failed to install: $package"
+    done 3< "$BREW_FILE"
 else
-    log_error "brewfile.txt not found at $BREW_FILE"
+    log_error "brew-packages.txt not found at $BREW_FILE"
     exit 1
 fi
-
-log_info "Brew packages installation complete"
-echo ""
-
 
 log_info "Brew packages installation complete"
 echo ""
