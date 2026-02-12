@@ -64,7 +64,7 @@ log_step "Step 2/7: Installing brew packages..."
 
 BREW_FILE="$SCRIPT_DIR/brewfile.txt"
 if [[ -f "$BREW_FILE" ]]; then
-    local cask_step_logged=false
+    cask_step_logged=false
     while IFS= read -r package <&3; do
         # Skip empty lines and comments
         [[ -z "$package" || "$package" =~ ^#.*$ ]] && continue
