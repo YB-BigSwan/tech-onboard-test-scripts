@@ -43,9 +43,9 @@ echo ""
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Step 1: Install Homebrew if not already installed
-echo "[STEP] Step 1/7: Checking Homebrew installation..."
+log_step "Step 1/7: Checking Homebrew installation..."
 if ! command -v brew &> /dev/null; then
-    echo "[INFO] Installing Homebrew..."
+    log_info "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     
     # Add Homebrew to PATH for Apple Silicon Macs
@@ -54,92 +54,71 @@ if ! command -v brew &> /dev/null; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 else
-    echo "[INFO] Homebrew already installed"
+    log_info "Homebrew already installed"
     brew update
 fi
 echo ""
 
-# Step 2: Install CLI packages
-echo "[STEP] Step 2/7: Installing CLI packages..."
+# Step 2: Install brew packages from brew-packages.txt
+log_step "Step 2/7: Installing brew packages..."
 
-# Core utilities
-echo "[INFO] Installing core utilities..."
-brew install coreutils binutils diffutils gnutls jq bazelisk 2>&1
+BREW_FILE="$SCRIPT_DIR/brew-packages.txt"
+if [[ -f "$BREW_FILE" ]]; then
+    while IFS= read -r package; do
+        # Skip empty lines and comments
+        [[ -z "$package" || "$package" =~ ^#.*$ ]] && continue
 
-# Development tools
-echo "[INFO] Installing development tools..."
-brew install gcc parallel make gnu-sed graphviz python-yq 2>&1
+        log_info "Installing: $package"
+        brew install $package 2>&1 || log_warn "Failed to install: $package"
+    done < "$BREW_FILE"
+else
+    log_error "brew-packages.txt not found at $BREW_FILE"
+    exit 1
+fi
 
-# Programming languages and tools
-echo "[INFO] Installing programming languages and cloud tools..."
-brew install git go docker docker-compose kubectl openblas node helm terraform hcl2json gh 2>&1
-
-# Python
-echo "[INFO] Installing Python..."
-brew install python@3.11 2>&1
-
-echo "[INFO] CLI packages installation complete"
+log_info "Brew packages installation complete"
 echo ""
 
-# Step 3: Install GUI applications
-echo "[STEP] Step 3/7: Installing GUI applications..."
 
-echo "[INFO] Installing Visual Studio Code..."
-brew install --cask visual-studio-code 2>&1
-
-echo "[INFO] Installing iTerm2..."
-brew install --cask iterm2 2>&1
-
-echo "[INFO] Installing Docker Desktop..."
-brew install --cask docker 2>&1
-
-echo "[INFO] Installing Tailscale..."
-brew install --cask tailscale 2>&1
-
-echo "[INFO] Installing Google Cloud SDK..."
-brew install --cask google-cloud-sdk 2>&1
-
-echo "[INFO] GUI applications installation complete"
+log_info "Brew packages installation complete"
 echo ""
 
-# Step 4: Install gcloud components
-echo "[STEP] Step 4/7: Installing gcloud components..."
+# Step 3: Install gcloud components
+log_step "Step 3/7: Installing gcloud components..."
 if command -v gcloud &> /dev/null; then
-    echo "[INFO] Installing gke-gcloud-auth-plugin..."
-    gcloud components install gke-gcloud-auth-plugin --quiet 2>&1 || echo "[WARN] Failed to install gke-gcloud-auth-plugin"
+    log_info "Installing gke-gcloud-auth-plugin..."
+    gcloud components install gke-gcloud-auth-plugin --quiet 2>&1 || log_warn "Failed to install gke-gcloud-auth-plugin"
 fi
 echo ""
 
-# Step 5: Install Oh My Zsh
-echo "[STEP] Step 5/7: Setting up Oh My Zsh..."
+# Step 4: Install Oh My Zsh
+log_step "Step 4/7: Setting up Oh My Zsh..."
 if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-    echo "[INFO] Installing Oh My Zsh..."
+    log_info "Installing Oh My Zsh..."
     RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" 2>&1
 else
-    echo "[INFO] Oh My Zsh already installed"
+    log_info "Oh My Zsh already installed"
 fi
 
 # Install zsh plugins
-echo "[INFO] Installing zsh plugins..."
+log_info "Installing zsh plugins..."
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
-# zsh-syntax-highlighting
 if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]]; then
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" 2>&1
 else
-    echo "[INFO] zsh-syntax-highlighting already installed"
+    log_info "zsh-syntax-highlighting already installed"
 fi
 
-# zsh-autosuggestions
 if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]]; then
     git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions" 2>&1
 else
-    echo "[INFO] zsh-autosuggestions already installed"
+    log_info "zsh-autosuggestions already installed"
 fi
 echo ""
 
-# Step 6: Setup dotfiles (symlinks)
-echo "[STEP] Step 6/7: Setting up dotfiles..."
+# Step 5: Setup dotfiles (symlinks)
+log_step "Step 5/7: Setting up dotfiles..."
 if [[ -d "$SCRIPT_DIR/dotfiles" ]]; then
     for file in "$SCRIPT_DIR/dotfiles"/.??*; do
         [[ "$(basename "$file")" == ".git" ]] && continue
@@ -148,65 +127,68 @@ if [[ -d "$SCRIPT_DIR/dotfiles" ]]; then
         filename=$(basename "$file")
         target="$HOME/$filename"
         
-        # Backup existing file if it exists and is not a symlink
         if [[ -f "$target" && ! -L "$target" ]]; then
-            echo "[WARN] Backing up existing $filename to ${filename}.backup"
+            log_warn "Backing up existing $filename to ${filename}.backup"
             mv "$target" "${target}.backup"
         fi
         
-        # Create symlink
-        echo "[INFO] Symlinking $filename"
+        log_info "Symlinking $filename"
         ln -sf "$file" "$target"
     done
 else
-    echo "[WARN] dotfiles directory not found, skipping..."
+    log_warn "dotfiles directory not found, skipping..."
 fi
 echo ""
 
-# Step 7: Install VS Code extensions
-echo "Step 7: Installing VS Code extensions..."
+# Step 6: Install VS Code extensions
+log_step "Step 6/7: Installing VS Code extensions..."
 
-# Add VS Code to PATH if it's not already there
 if ! command -v code &> /dev/null; then
     export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 fi
 
-# Verify code is now available
+VSCODE_FILE="$SCRIPT_DIR/vscode-extensions.txt"
 if command -v code &> /dev/null; then
-    while IFS= read -r extension; do
-    # Skip empty lines and comments
-    [[ -z "$extension" || "$extension" =~ ^#.*$ ]] && continue
-    
-    echo "Installing extension: $extension"
-    code --install-extension "$extension" --force
-done < vscode-extensions.txt
+    if [[ -f "$VSCODE_FILE" ]]; then
+        while IFS= read -r extension; do
+            [[ -z "$extension" || "$extension" =~ ^#.*$ ]] && continue
+            
+            log_info "Installing extension: $extension"
+            code --install-extension "$extension" --force
+        done < "$VSCODE_FILE"
+    else
+        log_error "vscode-extensions.txt not found at $VSCODE_FILE"
+    fi
 else
-    echo "ERROR: VS Code CLI not found. Please ensure VS Code is installed."
-    echo "You may need to open VS Code and run 'Shell Command: Install code command in PATH'"
+    log_error "VS Code CLI not found. Please ensure VS Code is installed."
+    log_error "You may need to open VS Code and run 'Shell Command: Install code command in PATH'"
 fi
 echo ""
 
+# Step 7: Additional setup
+log_step "Step 7/7: Additional setup..."
+
 # Check and install Rosetta 2 if on Apple Silicon
 if [[ $(uname -m) == 'arm64' ]]; then
-    echo "Checking for Rosetta 2..."
+    log_info "Checking for Rosetta 2..."
     if ! /usr/bin/pgrep -q oahd; then
-        echo "Installing Rosetta 2 (required for SnowSQL on Apple Silicon)..."
+        log_info "Installing Rosetta 2 (required for SnowSQL on Apple Silicon)..."
         softwareupdate --install-rosetta --agree-to-license
     else
-        echo "Rosetta 2 already installed."
+        log_info "Rosetta 2 already installed"
     fi
 fi
 
 # Install SnowSQL
-echo "[INFO] Installing SnowSQL..."
+log_info "Installing SnowSQL..."
 if [[ ! -f /Applications/SnowSQL.app/Contents/MacOS/snowsql ]]; then
-    echo "[INFO] Downloading SnowSQL installer..."
+    log_info "Downloading SnowSQL installer..."
     curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/darwin_x86_64/snowsql-1.2.28-darwin_x86_64.pkg 2>&1
-    echo "[INFO] Installing SnowSQL (may require password)..."
+    log_info "Installing SnowSQL (may require password)..."
     sudo installer -pkg snowsql-1.2.28-darwin_x86_64.pkg -target / 2>&1
     rm snowsql-1.2.28-darwin_x86_64.pkg
 else
-    echo "[INFO] SnowSQL already installed"
+    log_info "SnowSQL already installed"
 fi
 echo ""
 

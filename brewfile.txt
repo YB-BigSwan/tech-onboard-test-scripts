@@ -1,0 +1,47 @@
+# Brew Packages
+# Format: package-name (or --cask package-name for GUI apps)
+# Lines starting with # are comments, empty lines are ignored
+
+# Core Utilities
+coreutils
+binutils
+diffutils
+gnutls
+jq
+parallel
+
+# Development Tools
+gcc
+make
+gnu-sed
+graphviz
+python-yq
+gh
+
+# Programming Languages
+go
+node
+python@3.11
+
+# Build Tools
+bazelisk
+
+# Cloud & Infrastructure
+kubectl
+helm
+terraform
+hcl2json
+google-cloud-sdk
+
+# Containers
+docker
+docker-compose
+
+# Data
+openblas
+
+# GUI Applications
+--cask visual-studio-code
+--cask iterm2
+--cask docker
+--cask tailscale
